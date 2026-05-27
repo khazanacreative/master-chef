@@ -66,6 +66,23 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
   return brandedErrorResponse();
 }
 
+function isLocalHostname(hostname: string): boolean {
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "[::1]" ||
+    hostname.endsWith(".local")
+  ) {
+    return true;
+  }
+  // Check if it's an IPv4 address (e.g. 10.x.x.x, 192.168.x.x, 172.16.x.x-172.31.x.x)
+  const ipv4Pattern = /^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/;
+  if (ipv4Pattern.test(hostname)) {
+    return true;
+  }
+  return false;
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
@@ -75,8 +92,8 @@ export default {
       const xProto = request.headers.get("x-forwarded-proto");
       const proto = xProto ? xProto.toLowerCase() : url.protocol.replace(":", "");
       
-      // If HTTP protocol detected, redirect to HTTPS securely.
-      if (proto === "http") {
+      // If HTTP protocol detected, redirect to HTTPS securely (except for local development).
+      if (proto === "http" && !isLocalHostname(url.hostname)) {
         url.protocol = "https:";
         return new Response(null, {
           status: 301,

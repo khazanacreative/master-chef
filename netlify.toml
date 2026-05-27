@@ -3,7 +3,7 @@
 
 [build]
   command = "npm run build"
-  publish = ".output" # Adjust if your TanStack Start output path differs
+  publish = "dist/client"
 
 [[redirects]]
   from = "http://*"
