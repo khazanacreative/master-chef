@@ -73,20 +73,24 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Lovable App" },
-      { name: "description", content: "Lovable Generated Project" },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "Lovable App" },
-      { property: "og:description", content: "Lovable Generated Project" },
+      { title: "Master Chef Quest" },
+      { name: "description", content: "Belanja bahan, masak menu lezat, dan raih berkah bersama di pasar tradisional." },
+      { name: "author", content: "Master Chef Quest" },
+      { property: "og:title", content: "Master Chef Quest" },
+      { property: "og:description", content: "Belanja bahan, masak menu lezat, dan raih berkah bersama di pasar tradisional." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
         rel: "stylesheet",
         href: appCss,
       },
+      {
+        rel: "icon",
+        type: "image/svg+xml",
+        href: `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="%23EA580C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 18V6a4 4 0 0 1 8 0v12" /><path d="M18 18V9a4 4 0 0 0-8 0v9" /><path d="M3 18h18a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1Z" /></svg>`
+      }
     ],
   }),
   shellComponent: RootShell,

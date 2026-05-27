@@ -69,6 +69,23 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      const url = new URL(request.url);
+      
+      // Determine protocol: check headers first, then fallback to URL protocol.
+      const xProto = request.headers.get("x-forwarded-proto");
+      const proto = xProto ? xProto.toLowerCase() : url.protocol.replace(":", "");
+      
+      // If HTTP protocol detected, redirect to HTTPS securely.
+      if (proto === "http") {
+        url.protocol = "https:";
+        return new Response(null, {
+          status: 301,
+          headers: {
+            Location: url.toString(),
+          },
+        });
+      }
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

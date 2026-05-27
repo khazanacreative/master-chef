@@ -1,0 +1,16 @@
+{
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [
+        {
+          "type": "host",
+          "value": "^(?!(www\\.)?master-chef\\.)(?<subdomain>.*)\\.vercel\\.app$"
+        }
+      ],
+      "destination": "https://master-chef.vercel.app/:path*",
+      "statusCode": 308
+    }
+  ]
+}

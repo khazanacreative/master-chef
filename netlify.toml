@@ -1,0 +1,17 @@
+# Netlify Configuration File
+# This file configures build settings, redirects, and headers.
+
+[build]
+  command = "npm run build"
+  publish = ".output" # Adjust if your TanStack Start output path differs
+
+[[redirects]]
+  from = "http://*"
+  to = "https://:splat"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
