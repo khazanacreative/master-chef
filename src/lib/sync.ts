@@ -1,13 +1,4 @@
-import { MARKET_CARDS, MENUS, type Menu, type Player } from "./game-data";
-
-export interface GameState {
-  players: Player[];
-  deck: string[];
-  turn: number;
-  revealed: string | null;
-  flipping: boolean;
-  isMultiplayer?: boolean;
-}
+import { MARKET_CARDS, MENUS, type Menu, type Player, type GameState } from "./game-data";
 
 /**
  * Encodes the game state into a compact Base64 string.
@@ -35,6 +26,7 @@ export function serializeState(state: GameState): string {
     t: state.turn,
     r: state.revealed ? MARKET_CARDS.find((c) => c.name === state.revealed)?.id || null : null,
     m: state.isMultiplayer || false,
+    c: state.roomCode || "",
   };
 
   const jsonStr = JSON.stringify(compact);
@@ -84,6 +76,7 @@ export function deserializeState(base64: string): GameState | null {
       revealed: revealedCard ? revealedCard.name : null,
       flipping: false,
       isMultiplayer: compact.m || false,
+      roomCode: compact.c || undefined,
     };
   } catch (err) {
     console.error("Failed to deserialize state:", err);

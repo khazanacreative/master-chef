@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import { ChefHat, Sparkles, ShoppingBasket, Coins, Trophy, HandHeart, RotateCcw, Users, ArrowRight, CheckCircle2, Circle, Utensils, Soup, IceCream, Layers, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,39 @@ import {
   type Menu, type Player, type GameState
 } from "@/lib/game-data";
 import { serializeState, deserializeState } from "@/lib/sync";
+
+const clientId = Math.random().toString(36).substring(2) + Date.now().toString(36);
+
+function publishState(roomCode: string, state: GameState) {
+  if (!roomCode || !state || state.players.length === 0) return;
+  const code = serializeState(state);
+  const topic = "mchef-" + roomCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+  
+  fetch(`https://ntfy.sh/${topic}`, {
+    method: "POST",
+    headers: {
+      "Title": "Master Chef Sync Broadcast",
+    },
+    body: JSON.stringify({
+      type: "SYNC_STATE",
+      state: code,
+      sender: clientId,
+    }),
+  }).catch((err) => console.error("Failed to publish state:", err));
+}
+
+function requestState(roomCode: string) {
+  if (!roomCode) return;
+  const topic = "mchef-" + roomCode.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+  
+  fetch(`https://ntfy.sh/${topic}`, {
+    method: "POST",
+    body: JSON.stringify({
+      type: "REQ_STATE",
+      sender: clientId,
+    }),
+  }).catch((err) => console.error("Failed to request state:", err));
+}
 
 type Phase = "lobby" | "play" | "over";
 
@@ -109,6 +142,14 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
   const [mode, setMode] = useState<"local" | "multiplayer">("local");
   const [localRole, setLocalRole] = useState<"0" | "1" | "2" | "3">("0");
   const [joinCode, setJoinCode] = useState("");
+  const [roomCode, setRoomCode] = useState(() => {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let code = "";
+    for (let i = 0; i < 4; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return `MCHF-${code}`;
+  });
 
   const start = () => {
     const names = [];
@@ -141,17 +182,46 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
       revealed: null,
       flipping: false,
       isMultiplayer: count !== "1" && mode === "multiplayer",
+      roomCode: count !== "1" && mode === "multiplayer" ? roomCode.trim().toUpperCase() : undefined,
     });
   };
 
   const joinGame = () => {
-    if (!joinCode.trim()) return;
-    const decoded = deserializeState(joinCode.trim());
+    const input = joinCode.trim();
+    if (!input) return;
+
+    // 1. Try to parse as URL
+    let stateParam = input;
+    if (input.includes("state=")) {
+      try {
+        const urlParams = new URLSearchParams(input.split("?")[1]);
+        stateParam = urlParams.get("state") || input;
+      } catch (e) {}
+    }
+
+    // 2. Try to deserialize as Base64 state
+    const decoded = deserializeState(stateParam);
     if (decoded) {
       onStart(decoded);
-      toast.success("Berhasil bergabung ke game multiplayer!");
+      toast.success("Berhasil bergabung ke game!");
+      return;
+    }
+
+    // 3. Otherwise, check if it's a Room Code
+    const cleanCode = input.toUpperCase().replace(/[^A-Z0-9-]/g, "");
+    if (cleanCode.length >= 3) {
+      onStart({
+        players: [],
+        deck: [],
+        turn: 0,
+        revealed: null,
+        flipping: false,
+        isMultiplayer: true,
+        roomCode: cleanCode,
+      });
+      toast.success(`Menghubungkan ke Room: ${cleanCode}`);
     } else {
-      toast.error("Kode sinkronisasi salah atau tidak dapat dibaca.");
+      toast.error("Kode tidak valid. Masukkan Room Code (misal: MCHF-ABCD) atau Link Game.");
     }
   };
 
@@ -242,7 +312,7 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
                   }`}
                 >
                   <RadioGroupItem value="local" className="sr-only" />
-                  <span className="font-semibold">Lokal (1 Layar)</span>
+                  <span className="font-semibold">Join Mode</span>
                 </label>
                 <label
                   className={`flex items-center justify-center gap-1.5 rounded-lg border-2 py-2.5 cursor-pointer text-xs transition-all ${
@@ -250,36 +320,74 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
                   }`}
                 >
                   <RadioGroupItem value="multiplayer" className="sr-only" />
-                  <span className="font-semibold">Lintas Device</span>
+                  <span className="font-semibold">Versus Mode</span>
                 </label>
               </RadioGroup>
+              <p className="text-[10px] text-muted-foreground mt-1 leading-normal">
+                {mode === "local"
+                  ? "💡 Join Mode: Semua pemain bergiliran bermain menggunakan satu layar/HP yang sama."
+                  : "💡 Versus Mode: Pemain bermain di HP masing-masing dan tersinkronisasi via Kode Room."}
+              </p>
             </div>
           )}
 
           {count !== "1" && mode === "multiplayer" && (
-            <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-              <Label className="text-sm font-semibold">Perangkat Ini Sebagai</Label>
-              <RadioGroup
-                value={localRole}
-                onValueChange={(v) => setLocalRole(v as "0" | "1" | "2" | "3")}
-                className="grid grid-cols-2 gap-2"
-              >
-                {Array.from({ length: parseInt(count, 10) }).map((_, idx) => {
-                  const name = idx === 0 ? p1 : idx === 1 ? p2 : idx === 2 ? p3 : p4;
-                  return (
-                    <label
-                      key={idx}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg border-2 py-2 cursor-pointer text-xs transition-all ${
-                        localRole === String(idx) ? "border-primary bg-primary/5 text-primary" : "border-border bg-card text-muted-foreground"
-                      }`}
-                    >
-                      <RadioGroupItem value={String(idx)} className="sr-only" />
-                      <span className="font-semibold truncate">Pemain {idx + 1} ({name || `Chef ${idx + 1}`})</span>
-                    </label>
-                  );
-                })}
-              </RadioGroup>
-            </div>
+            <>
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 border-t border-border/40 pt-3">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="roomCodeInput" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Kode Room Versus</Label>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-6 text-[10px] text-primary font-bold hover:bg-primary/10 px-2"
+                    onClick={() => {
+                      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+                      let code = "";
+                      for (let i = 0; i < 4; i++) {
+                        code += chars.charAt(Math.floor(Math.random() * chars.length));
+                      }
+                      setRoomCode(`MCHF-${code}`);
+                    }}
+                  >
+                    Acak Kode
+                  </Button>
+                </div>
+                <Input
+                  id="roomCodeInput"
+                  value={roomCode}
+                  onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
+                  placeholder="Misal: MCHF-ABCD"
+                  className="font-mono text-center tracking-wider font-extrabold text-lg"
+                />
+                <p className="text-[10px] text-muted-foreground leading-normal">
+                  Bagikan kode ini ke pemain lain agar mereka bisa bergabung ke room yang sama.
+                </p>
+              </div>
+
+              <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200 border-t border-border/40 pt-3">
+                <Label className="text-sm font-semibold">Perangkat Ini Sebagai</Label>
+                <RadioGroup
+                  value={localRole}
+                  onValueChange={(v) => setLocalRole(v as "0" | "1" | "2" | "3")}
+                  className="grid grid-cols-2 gap-2"
+                >
+                  {Array.from({ length: parseInt(count, 10) }).map((_, idx) => {
+                    const name = idx === 0 ? p1 : idx === 1 ? p2 : idx === 2 ? p3 : p4;
+                    return (
+                      <label
+                        key={idx}
+                        className={`flex items-center justify-center gap-1.5 rounded-lg border-2 py-2 cursor-pointer text-xs transition-all ${
+                          localRole === String(idx) ? "border-primary bg-primary/5 text-primary" : "border-border bg-card text-muted-foreground"
+                        }`}
+                      >
+                        <RadioGroupItem value={String(idx)} className="sr-only" />
+                        <span className="font-semibold truncate">Pemain {idx + 1} ({name || `Chef ${idx + 1}`})</span>
+                      </label>
+                    );
+                  })}
+                </RadioGroup>
+              </div>
+            </>
           )}
 
           <div className="space-y-2">
@@ -310,14 +418,14 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
         <Card className="mt-4 p-5 border-border/60 shadow-sm space-y-3 bg-muted/20">
           <div className="space-y-1.5">
             <Label htmlFor="joinCode" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              Gabung Game Aktif (Lintas Device)
+              Gabung Versus Mode (Kode Room / Link)
             </Label>
             <div className="flex gap-2">
               <Input
                 id="joinCode"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value)}
-                placeholder="Tempel Kode Sinkronisasi..."
+                placeholder="Masukkan Kode Room (MCHF-ABCD) / Link..."
                 className="text-xs flex-1 bg-background"
               />
               <Button onClick={joinGame} variant="secondary" size="sm" className="font-bold shrink-0">
@@ -352,6 +460,7 @@ function Gameplay({
   });
 
   const [copied, setCopied] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
 
   const syncLink = useMemo(() => {
     if (typeof window === "undefined" || !state) return "";
@@ -365,6 +474,151 @@ function Gameplay({
     toast.success("Link sinkronisasi disalin!");
     setTimeout(() => setCopied(false), 2000);
   };
+
+  const stateRef = useRef(state);
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  // Reset localRole if out of bounds for the current player list (e.g. if room changed player count)
+  useEffect(() => {
+    if (localRole !== null && state.players.length > 0 && localRole >= state.players.length) {
+      localStorage.removeItem("mchef_player_role");
+      setLocalRole(null);
+    }
+  }, [localRole, state.players.length]);
+
+  // EventSource subscription for real-time room sync
+  useEffect(() => {
+    if (!state || !state.isMultiplayer || !state.roomCode) return;
+
+    const room = state.roomCode;
+    const topic = "mchef-" + room.trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
+    const url = `https://ntfy.sh/${topic}/sse`;
+    
+    console.log("Subscribing to room topic:", topic);
+    const eventSource = new EventSource(url);
+    
+    eventSource.onmessage = (event) => {
+      try {
+        const payload = JSON.parse(event.data);
+        if (!payload.message) return;
+        
+        const data = JSON.parse(payload.message);
+        if (data.sender === clientId) return; // ignore our own messages
+        
+        if (data.type === "REQ_STATE") {
+          if (localRole === 0) {
+            console.log("Host received REQ_STATE, broadcasting current state...");
+            publishState(room, stateRef.current);
+          }
+        } else if (data.type === "SYNC_STATE") {
+          console.log("Received SYNC_STATE from another client, applying...");
+          const decoded = deserializeState(data.state);
+          if (decoded) {
+            setState((current) => {
+              return {
+                ...decoded,
+                roomCode: room,
+              };
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Error parsing room message:", err);
+      }
+    };
+
+    // Send state request on mount if joining player, and retry every 3s until players are loaded
+    let requestInterval: any;
+    if (state.players.length === 0) {
+      console.log("Sending initial REQ_STATE to room...");
+      requestState(room);
+      requestInterval = setInterval(() => {
+        console.log("Retrying REQ_STATE...");
+        requestState(room);
+      }, 3000);
+    }
+
+    return () => {
+      console.log("Unsubscribing from room topic:", topic);
+      eventSource.close();
+      if (requestInterval) {
+        clearInterval(requestInterval);
+      }
+    };
+  }, [state?.isMultiplayer, state?.roomCode, localRole, state.players.length === 0]);
+
+  // Host broadcasts initial state on mount
+  useEffect(() => {
+    if (state.isMultiplayer && state.roomCode && localRole === 0) {
+      console.log("Host broadcasting initial state on mount...");
+      publishState(state.roomCode, state);
+    }
+  }, []);
+
+  // Loading state if joining player is waiting for initial sync
+  const [joinCode, setJoinCode] = useState("");
+  if (state.isMultiplayer && state.players.length === 0 && state.roomCode) {
+    return (
+      <div className="min-h-screen bg-background px-4 py-8 flex items-center justify-center animate-in fade-in duration-300">
+        <div className="w-full max-w-md text-center space-y-6">
+          <Card className="p-6 space-y-6 border-border/60 shadow-lg bg-gradient-to-br from-card to-muted/20">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-md animate-pulse">
+              <ChefHat className="w-7 h-7" />
+            </div>
+            
+            <div className="space-y-2">
+              <h2 className="text-xl font-black text-foreground">Menghubungkan ke Room</h2>
+              <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-sm font-extrabold px-3 py-1 mt-1">
+                {state.roomCode}
+              </Badge>
+              <p className="text-xs text-muted-foreground leading-relaxed pt-2">
+                Menunggu Pemain 1 memulai permainan dan membagikan data deck & menu...
+              </p>
+            </div>
+            
+            <div className="flex items-center justify-center gap-1.5 text-xs text-primary font-bold animate-pulse">
+              <RotateCcw className="w-4 h-4 animate-spin duration-[3s]" />
+              Sedang sinkronisasi...
+            </div>
+          </Card>
+          
+          {/* Manual sync fallback in case ntfy fails */}
+          <Card className="p-5 border-border/60 shadow-sm space-y-3 bg-muted/20 text-left">
+            <Label htmlFor="joinCode" className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+              Gagal Sinkron Otomatis? Tempel Kode Manual
+            </Label>
+            <div className="flex gap-2">
+              <Input
+                id="joinCode"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
+                placeholder="Tempel Kode Sinkronisasi..."
+                className="text-xs flex-1 bg-background"
+              />
+              <Button 
+                onClick={() => {
+                  const decoded = deserializeState(joinCode.trim());
+                  if (decoded) {
+                    setState(decoded);
+                    toast.success("Berhasil sinkron manual!");
+                  } else {
+                    toast.error("Kode tidak valid.");
+                  }
+                }} 
+                variant="secondary" 
+                size="sm" 
+                className="font-bold shrink-0"
+              >
+                Sync
+              </Button>
+            </div>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   // Role selector overlay if not set
   if (state.isMultiplayer && localRole === null) {
@@ -406,8 +660,8 @@ function Gameplay({
 
   // Waiting for other player overlay if turn is not ours
   if (state.isMultiplayer && localRole !== null && state.turn !== localRole) {
-    const activeChefName = state.players[state.turn].name;
-    const myChefName = state.players[localRole].name;
+    const activeChefName = state.players[state.turn]?.name || `Chef ${state.turn + 1}`;
+    const myChefName = state.players[localRole]?.name || `Chef ${localRole + 1}`;
     
     return (
       <div className="min-h-screen flex flex-col bg-background animate-in fade-in duration-300">
@@ -441,27 +695,77 @@ function Gameplay({
             </p>
           </div>
 
-          {/* QR Code Card */}
-          <Card className="w-full p-6 border-border/60 shadow-lg flex flex-col items-center gap-4 bg-gradient-to-br from-card to-muted/20">
-            <p className="text-xs font-bold text-center text-muted-foreground uppercase tracking-wider">
-              Bagikan giliran ke {activeChefName}
-            </p>
-            <div className="p-3 bg-white rounded-2xl border-2 border-[#F0F2EE] shadow-inner relative group">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(syncLink)}`}
-                alt="QR Code Sinkronisasi"
-                className="w-[200px] h-[200px]"
-              />
-            </div>
-            <p className="text-[10px] text-muted-foreground text-center max-w-[280px]">
-              Tunjukkan QR code ini agar {activeChefName} bisa memindainya langsung dari layarnya, atau kirimkan link sinkronisasi di bawah.
-            </p>
+          {/* Real-time Sync Status Card */}
+          <Card className="w-full p-6 border-border/60 shadow-lg flex flex-col items-center gap-4 bg-gradient-to-br from-card to-muted/20 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8" />
+            <div className="absolute bottom-0 left-0 w-20 h-20 bg-secondary/5 rounded-full -ml-8 -mb-8" />
             
-            <div className="w-full flex gap-2">
-              <Button onClick={handleCopyLink} className="flex-1 gap-2 font-bold text-xs" size="sm">
-                {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                {copied ? "Link Disalin" : "Salin Link Sinkronisasi"}
+            <div className="space-y-1 text-center relative z-10 w-full">
+              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                Kode Room Versus Mode
+              </p>
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-mono text-2xl font-black text-foreground tracking-wider select-all">
+                  {state.roomCode || "Tanpa Kode"}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    navigator.clipboard.writeText(state.roomCode || "");
+                    toast.success("Kode Room disalin!");
+                  }}
+                >
+                  <Copy className="w-3.5 h-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-2 w-full p-4 rounded-xl bg-background/60 border border-border/40 relative z-10">
+              <div className="flex items-center gap-2">
+                <span className="relative flex h-2.5 w-2.5">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                </span>
+                <span className="text-xs font-black text-emerald-600 dark:text-emerald-500">
+                  Sinkronisasi Otomatis Aktif
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
+                Layar Anda akan otomatis terbuka ketika <span className="font-bold text-foreground">{activeChefName}</span> menyelesaikan gilirannya.
+              </p>
+            </div>
+            
+            {/* Backup Manual Section */}
+            <div className="w-full border-t border-border/40 pt-4 mt-2 relative z-10">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full text-xs font-bold text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
+                onClick={() => setShowBackup(!showBackup)}
+              >
+                {showBackup ? "Sembunyikan Backup Manual" : "Tampilkan Backup Manual (QR Code/Link)"}
               </Button>
+              
+              {showBackup && (
+                <div className="mt-4 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full">
+                  <div className="p-3 bg-white rounded-xl border border-border shadow-inner">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(syncLink)}`}
+                      alt="QR Code Sinkronisasi"
+                      className="w-[150px] h-[150px]"
+                    />
+                  </div>
+                  <p className="text-[10px] text-muted-foreground text-center max-w-[280px]">
+                    Gunakan QR Code atau salin link di bawah ini jika sinkronisasi otomatis terhambat koneksi.
+                  </p>
+                  <Button onClick={handleCopyLink} className="w-full gap-2 font-bold text-xs" size="sm" variant="outline">
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? "Link Disalin" : "Salin Link Sinkronisasi"}
+                  </Button>
+                </div>
+              )}
             </div>
           </Card>
 
@@ -534,7 +838,11 @@ function Gameplay({
     setTimeout(() => {
       setState((s) => {
         const [card, ...rest] = s.deck;
-        return { ...s, deck: rest, revealed: card, flipping: false };
+        const next = { ...s, deck: rest, revealed: card, flipping: false };
+        if (s.isMultiplayer && s.roomCode) {
+          publishState(s.roomCode, next);
+        }
+        return next;
       });
     }, 450);
   };
@@ -548,6 +856,9 @@ function Gameplay({
       };
       if (checkEnd(next)) {
         setTimeout(onGameOver, 0);
+      }
+      if (s.isMultiplayer && s.roomCode) {
+        publishState(s.roomCode, next);
       }
       return next;
     });
@@ -607,6 +918,9 @@ function Gameplay({
       if (checkEnd(next)) {
         setTimeout(onGameOver, 600);
       }
+      if (s.isMultiplayer && s.roomCode) {
+        publishState(s.roomCode, next);
+      }
       return next;
     });
   };
@@ -635,7 +949,20 @@ function Gameplay({
             </span>
           </div>
           <div className="flex items-center gap-3 text-xs">
-            {state.isMultiplayer && localRole !== null && (
+            {state.isMultiplayer && state.roomCode && (
+              <Badge 
+                variant="secondary" 
+                className="bg-muted text-muted-foreground border-border/40 font-mono tracking-wider font-extrabold cursor-pointer hover:bg-muted/80 flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px]"
+                onClick={() => {
+                  navigator.clipboard.writeText(state.roomCode || "");
+                  toast.success("Kode Room disalin!");
+                }}
+              >
+                Room: {state.roomCode}
+                <Copy className="w-2.5 h-2.5 text-muted-foreground ml-0.5 shrink-0" />
+              </Badge>
+            )}
+            {state.isMultiplayer && localRole !== null && state.players[localRole] && (
               <div className="hidden sm:flex items-center gap-1.5">
                 <span className="text-[10px] text-muted-foreground font-semibold">Perangkat:</span>
                 <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[10px] font-black px-2 py-0.5 rounded-full">

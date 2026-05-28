@@ -35,6 +35,7 @@ export interface GameState {
   revealed: string | null;
   flipping: boolean;
   isMultiplayer?: boolean;
+  roomCode?: string;
 }
 
 export const MARKET_CARDS: MarketCard[] = [
