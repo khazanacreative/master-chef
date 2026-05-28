@@ -468,6 +468,14 @@ function Gameplay({
   const [copied, setCopied] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
 
+  const player = state.players[state.turn];
+  const displayPlayer = (state.isMultiplayer && localRole !== null && state.players[localRole])
+    ? state.players[localRole]
+    : player;
+  const isWaitingTurn = state.isMultiplayer && localRole !== null && state.turn !== localRole;
+  const activeChefName = state.players[state.turn]?.name || `Chef ${state.turn + 1}`;
+  const myChefName = localRole !== null ? state.players[localRole]?.name || `Chef ${localRole + 1}` : "";
+
   const syncLink = useMemo(() => {
     if (typeof window === "undefined" || !state) return "";
     const code = serializeState(state);
@@ -664,152 +672,8 @@ function Gameplay({
     );
   }
 
-  // Waiting for other player overlay if turn is not ours
-  if (state.isMultiplayer && localRole !== null && state.turn !== localRole) {
-    const activeChefName = state.players[state.turn]?.name || `Chef ${state.turn + 1}`;
-    const myChefName = state.players[localRole]?.name || `Chef ${localRole + 1}`;
-    
-    return (
-      <div className="min-h-screen flex flex-col justify-between bg-background px-4 py-8 animate-in fade-in duration-300">
-        {/* Top Header */}
-        <div className="flex items-center justify-between max-w-md w-full mx-auto text-xs border-b border-border/40 pb-3">
-          <div className="flex items-center gap-2">
-            <ChefHat className="w-4 h-4 text-primary" />
-            <span className="font-extrabold tracking-tight">Master Chef Quest</span>
-          </div>
-          {state.roomCode && (
-            <Badge variant="outline" className="font-mono font-bold bg-muted/30">
-              Room: {state.roomCode}
-            </Badge>
-          )}
-        </div>
 
-        {/* Center: Beautiful, minimal loader icon */}
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <div className="relative flex items-center justify-center w-24 h-24">
-            {/* Pulsing outer glow */}
-            <span className="absolute inline-flex h-20 w-20 rounded-full bg-primary/10 animate-ping opacity-60" />
-            {/* Spinning gradient outer border */}
-            <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-primary/20 border-l-transparent animate-spin duration-[2s]" />
-            {/* Centered chef hat bouncing or pulsing */}
-            <div className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
-              <ChefHat className="w-7 h-7 animate-pulse" />
-            </div>
-          </div>
-        </div>
 
-        {/* Bottom: Grouped Texts & Exit Button */}
-        <div className="max-w-md w-full mx-auto space-y-5">
-          <div className="text-center space-y-2 bg-muted/20 border border-border/40 p-5 rounded-2xl">
-            <p className="text-[10px] font-bold text-primary uppercase tracking-widest animate-pulse">
-              Menunggu Giliran Lawan
-            </p>
-            <h2 className="text-xl font-black text-foreground">
-              Sekarang giliran {activeChefName}
-            </h2>
-            <div className="flex flex-col gap-1.5 text-xs text-muted-foreground pt-1.5 border-t border-border/40">
-              <p>
-                Anda masuk sebagai: <span className="font-bold text-foreground">{myChefName}</span>
-              </p>
-              <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-500 font-semibold">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                Terhubung - Sinkronisasi otomatis aktif
-              </div>
-            </div>
-          </div>
-
-          {/* Standings/Stats Preview */}
-          <Card className="w-full p-4 border-border/60 shadow-sm space-y-3">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground border-b border-border pb-1">
-              Papan Klasemen Sementara
-            </h3>
-            <div className="space-y-2">
-              {state.players.map((p, idx) => {
-                const isActive = idx === state.turn;
-                return (
-                  <div
-                    key={idx}
-                    className={`rounded-lg border px-3 py-2 flex items-center justify-between text-xs transition-all ${
-                      isActive
-                        ? "border-primary bg-primary/5 font-semibold"
-                        : "border-border bg-card opacity-80"
-                    }`}
-                  >
-                    <div className="flex items-center gap-1.5 truncate">
-                      {isActive && <Sparkles className="w-3.5 h-3.5 text-primary animate-pulse shrink-0" />}
-                      <span className="font-bold truncate">{p.name}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-right">
-                      <div className="flex items-center gap-1 font-bold text-foreground">
-                        <Coins className="w-3 h-3 text-yellow-500" />
-                        {formatRp(p.cash)}
-                      </div>
-                      <span className="text-[10px] text-muted-foreground shrink-0">
-                        {p.completed.length}/6 Selesai
-                      </span>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-
-          <div className="flex flex-col gap-2">
-            {/* Backup Manual Section inside a subtle button */}
-            <div className="flex justify-between gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex-1 text-[10px] text-muted-foreground font-bold hover:bg-muted/30 py-1 h-7"
-                onClick={() => setShowBackup(!showBackup)}
-              >
-                {showBackup ? "Sembunyikan Backup" : "Backup Manual (QR/Link)"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  localStorage.removeItem("mchef_player_role");
-                  setLocalRole(null);
-                  toast.info("Pilih kembali peran perangkat Anda.");
-                }}
-                className="flex-1 text-[10px] text-muted-foreground font-bold hover:bg-muted/30 py-1 h-7"
-              >
-                Ganti Peran
-              </Button>
-            </div>
-            
-            {showBackup && (
-              <Card className="p-4 border-border/40 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-200 w-full">
-                <div className="p-2 bg-white rounded-lg border border-border">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(syncLink)}`}
-                    alt="QR Code Sinkronisasi"
-                    className="w-[100px] h-[100px]"
-                  />
-                </div>
-                <Button onClick={handleCopyLink} className="w-full gap-2 font-bold text-xs" size="sm" variant="outline">
-                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                  {copied ? "Link Disalin" : "Salin Link Sinkronisasi"}
-                </Button>
-              </Card>
-            )}
-
-            <Button
-              variant="destructive"
-              size="sm"
-              className="w-full font-bold text-xs mt-1"
-              onClick={onExit}
-            >
-              Keluar Permainan
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  const player = state.players[state.turn];
   const otherIdx = state.players.length === 1 ? 0 : (state.turn + 1) % state.players.length;
   // check end conditions
   const checkEnd = (s: GameState): boolean => {
@@ -818,6 +682,14 @@ function Gameplay({
     const everyoneBroke = s.players.every((p) => p.cash < 5000);
     return deckEmpty || someoneFinished || everyoneBroke;
   };
+
+  // Automatically trigger game over when end conditions are met on any device
+  useEffect(() => {
+    if (checkEnd(state)) {
+      const timer = setTimeout(onGameOver, 800); // slight delay for visual transition
+      return () => clearTimeout(timer);
+    }
+  }, [state, onGameOver]);
 
   const drawCard = () => {
     if (state.revealed || state.deck.length === 0) return;
@@ -980,95 +852,213 @@ function Gameplay({
           
           {/* Left Column: Sidebar (Stats & Market Deck) */}
           <aside className="lg:col-span-4 flex flex-col gap-4 lg:h-full lg:min-h-0 lg:overflow-y-auto pr-1 pb-4 scrollbar-thin">
-            {/* active player turn & balances */}
-            <Card className="p-3 border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm space-y-3">
-              <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                <div>
-                  <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Giliran Aktif</p>
-                  <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5 mt-0.5">
-                    <ChefHat className="w-3.5 h-3.5 text-primary animate-pulse" />
-                    {player.name}
-                  </h2>
-                </div>
-                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-bold py-0">
-                  Fase Bermain
-                </Badge>
-              </div>
-
-              <div className="space-y-2">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Saldo & Progres Chef</p>
-                {state.players.map((p, idx) => {
-                  const isActive = idx === state.turn;
-                  return (
-                    <div
-                      key={idx}
-                      className={`rounded-lg border px-2.5 py-2 transition-all ${
-                        isActive
-                           ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
-                           : "border-border bg-card opacity-80"
-                      }`}
-                    >
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-foreground truncate flex items-center gap-1">
-                          {isActive && <Sparkles className="w-3 h-3 text-primary shrink-0 animate-pulse" />}
-                          {p.name}
-                        </span>
-                        <span className="text-[9px] text-muted-foreground font-semibold">
-                          {p.completed.length}/6 menu selesai
-                        </span>
-                      </div>
-                      
-                      <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/40 text-[11px]">
-                        <div className="flex items-center gap-1 font-extrabold text-foreground">
-                          <Coins className="w-3 h-3 text-yellow-500" />
-                          {formatRp(p.cash)}
-                        </div>
-                        <div className="text-muted-foreground text-[9px]">
-                          Jasa: <span className="font-bold text-primary">{formatRp(p.totalJasa)}</span>
-                        </div>
+            {isWaitingTurn ? (
+              <Card className="p-5 border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm flex flex-col items-center justify-between min-h-[450px] flex-1 lg:h-full lg:overflow-y-auto pr-1 pb-4 scrollbar-thin">
+                {/* Loader & Status indicator */}
+                <div className="w-full flex flex-col items-center justify-center py-6 gap-6">
+                  <div className="relative flex items-center justify-center w-20 h-20">
+                    <span className="absolute inline-flex h-16 w-16 rounded-full bg-primary/10 animate-ping opacity-60" />
+                    <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-primary/20 border-l-transparent animate-spin duration-[2s]" />
+                    <div className="relative w-11 h-11 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+                      <ChefHat className="w-5 h-5 animate-pulse" />
+                    </div>
+                  </div>
+                  
+                  <div className="text-center space-y-1.5 w-full">
+                    <p className="text-[9px] font-bold text-primary uppercase tracking-widest animate-pulse">
+                      Menunggu Giliran Lawan
+                    </p>
+                    <h2 className="text-base font-black text-foreground">
+                      Sekarang giliran {activeChefName}
+                    </h2>
+                    <div className="flex flex-col gap-1 text-[11px] text-muted-foreground pt-1.5 border-t border-border/40 w-full max-w-[200px] mx-auto">
+                      <p>
+                        Anda: <span className="font-bold text-foreground">{myChefName}</span>
+                      </p>
+                      <div className="flex items-center justify-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-500 font-semibold">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                        Terhubung (Auto-Sync)
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-
-              {state.isMultiplayer && localRole !== null && (
-                <div className="pt-2.5 mt-1 border-t border-border/60 flex items-center justify-between text-[10px]">
-                  <span className="text-muted-foreground">
-                    Perangkat Anda: <strong className="text-foreground">{state.players[localRole].name}</strong>
-                  </span>
-                  <button
-                    onClick={() => {
-                      localStorage.removeItem("mchef_player_role");
-                      setLocalRole(null);
-                    }}
-                    className="text-primary hover:underline font-bold cursor-pointer"
-                  >
-                    Ganti Peran
-                  </button>
+                  </div>
                 </div>
-              )}
-            </Card>
 
-            {/* Market Desk */}
-            <section className="w-full flex-1 flex flex-col min-h-0">
-              <div className="flex items-center gap-2 mb-2 shrink-0">
-                <ShoppingBasket className="w-4 h-4 text-primary" />
-                <h2 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                  Pasar
-                </h2>
-              </div>
-              <div className="flex-1 min-h-0 flex flex-col">
-                <MarketDesk
-                  state={state}
-                  onDraw={drawCard}
-                  onSkip={skipCard}
-                  onBuy={buyFor}
-                  canBuyFor={canBuyFor}
-                  otherIdx={otherIdx}
-                />
-              </div>
-            </section>
+                {/* Standings/Stats Preview inside waiting sidebar */}
+                <div className="w-full space-y-2 py-2 border-t border-b border-border/40 my-3">
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-bold text-left">Saldo & Progres Chef</p>
+                  {state.players.map((p, idx) => {
+                    const isActive = idx === state.turn;
+                    return (
+                      <div
+                        key={idx}
+                        className={`rounded-lg border px-2.5 py-1.5 flex items-center justify-between text-xs transition-all ${
+                          isActive
+                            ? "border-primary bg-primary/5 font-semibold"
+                            : "border-border bg-card opacity-80"
+                        }`}
+                      >
+                        <div className="flex items-center gap-1.5 truncate">
+                          {isActive && <Sparkles className="w-3 h-3 text-primary animate-pulse shrink-0" />}
+                          <span className="font-bold truncate">{p.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-right">
+                          <div className="flex items-center gap-1 font-bold text-foreground">
+                            <Coins className="w-3 h-3 text-yellow-500" />
+                            {formatRp(p.cash)}
+                          </div>
+                          <span className="text-[9px] text-muted-foreground shrink-0">
+                            {p.completed.length}/6 Selesai
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Buttons at the bottom */}
+                <div className="w-full space-y-2 mt-auto">
+                  <div className="flex justify-between gap-1.5">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="flex-1 text-[9px] text-muted-foreground font-bold hover:bg-muted/30 py-0.5 h-6"
+                      onClick={() => setShowBackup(!showBackup)}
+                    >
+                      {showBackup ? "Tutup Backup" : "Backup (QR)"}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        localStorage.removeItem("mchef_player_role");
+                        setLocalRole(null);
+                        toast.info("Pilih kembali peran perangkat Anda.");
+                      }}
+                      className="flex-1 text-[9px] text-muted-foreground font-bold hover:bg-muted/30 py-0.5 h-6"
+                    >
+                      Ganti Peran
+                    </Button>
+                  </div>
+                  
+                  {showBackup && (
+                    <Card className="p-3 border-border/40 shadow-sm flex flex-col items-center gap-2 animate-in fade-in duration-200 w-full bg-background/50">
+                      <div className="p-1.5 bg-white rounded-lg border border-border">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(syncLink)}`}
+                          alt="QR Code Sinkronisasi"
+                          className="w-[85px] h-[85px]"
+                        />
+                      </div>
+                      <Button onClick={handleCopyLink} className="w-full gap-1.5 font-bold text-[10px] h-6" size="sm" variant="outline">
+                        {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                        {copied ? "Link Disalin" : "Salin Link"}
+                      </Button>
+                    </Card>
+                  )}
+
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="w-full font-bold text-[11px] h-8 mt-1"
+                    onClick={onExit}
+                  >
+                    Keluar Permainan
+                  </Button>
+                </div>
+              </Card>
+            ) : (
+              <>
+                {/* active player turn & balances */}
+                <Card className="p-3 border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm space-y-3">
+                  <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Giliran Aktif</p>
+                      <h2 className="text-sm font-extrabold text-foreground flex items-center gap-1.5 mt-0.5">
+                        <ChefHat className="w-3.5 h-3.5 text-primary animate-pulse" />
+                        {player.name}
+                      </h2>
+                    </div>
+                    <Badge variant="outline" className="bg-primary/5 text-primary border-primary/20 text-[9px] font-bold py-0">
+                      Fase Bermain
+                    </Badge>
+                  </div>
+
+                  <div className="space-y-2">
+                    <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-bold">Saldo & Progres Chef</p>
+                    {state.players.map((p, idx) => {
+                      const isActive = idx === state.turn;
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-lg border px-2.5 py-2 transition-all ${
+                            isActive
+                               ? "border-primary bg-primary/5 ring-1 ring-primary/20 shadow-sm"
+                               : "border-border bg-card opacity-80"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground truncate flex items-center gap-1">
+                              {isActive && <Sparkles className="w-3 h-3 text-primary shrink-0 animate-pulse" />}
+                              {p.name}
+                            </span>
+                            <span className="text-[9px] text-muted-foreground font-semibold">
+                              {p.completed.length}/6 menu selesai
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center justify-between mt-1.5 pt-1.5 border-t border-border/40 text-[11px]">
+                            <div className="flex items-center gap-1 font-extrabold text-foreground">
+                              <Coins className="w-3 h-3 text-yellow-500" />
+                              {formatRp(p.cash)}
+                            </div>
+                            <div className="text-muted-foreground text-[9px]">
+                              Jasa: <span className="font-bold text-primary">{formatRp(p.totalJasa)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {state.isMultiplayer && localRole !== null && (
+                    <div className="pt-2.5 mt-1 border-t border-border/60 flex items-center justify-between text-[10px]">
+                      <span className="text-muted-foreground">
+                        Perangkat Anda: <strong className="text-foreground">{state.players[localRole].name}</strong>
+                      </span>
+                      <button
+                        onClick={() => {
+                          localStorage.removeItem("mchef_player_role");
+                          setLocalRole(null);
+                        }}
+                        className="text-primary hover:underline font-bold cursor-pointer"
+                      >
+                        Ganti Peran
+                      </button>
+                    </div>
+                  )}
+                </Card>
+
+                {/* Market Desk */}
+                <section className="w-full flex-1 flex flex-col min-h-0">
+                  <div className="flex items-center gap-2 mb-2 shrink-0">
+                    <ShoppingBasket className="w-4 h-4 text-primary" />
+                    <h2 className="text-xs font-bold text-foreground uppercase tracking-wide">
+                      Pasar
+                    </h2>
+                  </div>
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    <MarketDesk
+                      state={state}
+                      onDraw={drawCard}
+                      onSkip={skipCard}
+                      onBuy={buyFor}
+                      canBuyFor={canBuyFor}
+                      otherIdx={otherIdx}
+                    />
+                  </div>
+                </section>
+              </>
+            )}
           </aside>
 
           {/* Right Column: Quest Board (6 Cards) */}
@@ -1076,11 +1066,11 @@ function Gameplay({
             <div className="flex items-center gap-2 shrink-0">
               <ChefHat className="w-4 h-4 text-primary" />
               <h2 className="text-xs font-bold text-foreground uppercase tracking-wide">
-                Quest Menu — {player.name}
+                Quest Menu — {displayPlayer.name} {state.isMultiplayer && localRole !== null && `(Anda)`}
               </h2>
             </div>
             <div className="flex-1 min-h-0 lg:overflow-hidden">
-              <QuestBoard player={player} />
+              <QuestBoard player={displayPlayer} />
             </div>
           </section>
 
