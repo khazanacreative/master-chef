@@ -122,6 +122,11 @@ export function GameApp() {
           })
         }
         onGameOver={() => setPhase("over")}
+        onExit={() => {
+          setState(null);
+          setPhase("lobby");
+          localStorage.removeItem("mchef_player_role");
+        }}
       />
     );
   }
@@ -445,11 +450,12 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
 
 /* ===================== GAMEPLAY ===================== */
 function Gameplay({
-  state, setState, onGameOver,
+  state, setState, onGameOver, onExit,
 }: {
   state: GameState;
   setState: (s: GameState | ((p: GameState) => GameState)) => void;
   onGameOver: () => void;
+  onExit: () => void;
 }) {
   const [localRole, setLocalRole] = useState<number | null>(() => {
     if (typeof window !== "undefined") {
@@ -664,110 +670,53 @@ function Gameplay({
     const myChefName = state.players[localRole]?.name || `Chef ${localRole + 1}`;
     
     return (
-      <div className="min-h-screen flex flex-col bg-background animate-in fade-in duration-300">
-        {/* Header */}
-        <header className="sticky top-0 z-20 bg-background/90 backdrop-blur-md border-b border-border shrink-0">
-          <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-primary text-primary-foreground flex items-center justify-center shadow-md">
-                <ChefHat className="w-4 h-4" />
-              </div>
-              <span className="font-black text-sm sm:text-base tracking-tight text-foreground">
-                Master Chef Quest
-              </span>
-            </div>
-            <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20 text-[9px] font-bold">
-              Menunggu Giliran Lawan
+      <div className="min-h-screen flex flex-col justify-between bg-background px-4 py-8 animate-in fade-in duration-300">
+        {/* Top Header */}
+        <div className="flex items-center justify-between max-w-md w-full mx-auto text-xs border-b border-border/40 pb-3">
+          <div className="flex items-center gap-2">
+            <ChefHat className="w-4 h-4 text-primary" />
+            <span className="font-extrabold tracking-tight">Master Chef Quest</span>
+          </div>
+          {state.roomCode && (
+            <Badge variant="outline" className="font-mono font-bold bg-muted/30">
+              Room: {state.roomCode}
             </Badge>
-          </div>
-        </header>
+          )}
+        </div>
 
-        {/* Main Content */}
-        <main className="flex-1 max-w-md w-full mx-auto px-4 py-6 flex flex-col justify-center items-center gap-6">
-          <div className="text-center space-y-2">
-            <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-yellow-500/10 text-yellow-600 animate-pulse mb-2">
-              <RotateCcw className="w-6 h-6 animate-spin duration-[3s]" />
+        {/* Center: Beautiful, minimal loader icon */}
+        <div className="flex-1 flex flex-col items-center justify-center">
+          <div className="relative flex items-center justify-center w-24 h-24">
+            {/* Pulsing outer glow */}
+            <span className="absolute inline-flex h-20 w-20 rounded-full bg-primary/10 animate-ping opacity-60" />
+            {/* Spinning gradient outer border */}
+            <div className="absolute inset-0 rounded-full border-4 border-t-primary border-r-transparent border-b-primary/20 border-l-transparent animate-spin duration-[2s]" />
+            {/* Centered chef hat bouncing or pulsing */}
+            <div className="relative w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg shadow-primary/20">
+              <ChefHat className="w-7 h-7 animate-pulse" />
             </div>
-            <h2 className="text-2xl font-black text-foreground">Giliran {activeChefName}</h2>
-            <p className="text-xs text-muted-foreground">
-              Anda masuk sebagai <span className="font-bold text-foreground">{myChefName}</span>. 
-              {state.revealed ? " Giliran lawan sedang memilih kartu." : " Tunggu lawan membuka kartu pasar selanjutnya."}
+          </div>
+        </div>
+
+        {/* Bottom: Grouped Texts & Exit Button */}
+        <div className="max-w-md w-full mx-auto space-y-5">
+          <div className="text-center space-y-2 bg-muted/20 border border-border/40 p-5 rounded-2xl">
+            <p className="text-[10px] font-bold text-primary uppercase tracking-widest animate-pulse">
+              Menunggu Giliran Lawan
             </p>
+            <h2 className="text-xl font-black text-foreground">
+              Sekarang giliran {activeChefName}
+            </h2>
+            <div className="flex flex-col gap-1.5 text-xs text-muted-foreground pt-1.5 border-t border-border/40">
+              <p>
+                Anda masuk sebagai: <span className="font-bold text-foreground">{myChefName}</span>
+              </p>
+              <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-500 font-semibold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                Terhubung - Sinkronisasi otomatis aktif
+              </div>
+            </div>
           </div>
-
-          {/* Real-time Sync Status Card */}
-          <Card className="w-full p-6 border-border/60 shadow-lg flex flex-col items-center gap-4 bg-gradient-to-br from-card to-muted/20 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full -mr-8 -mt-8" />
-            <div className="absolute bottom-0 left-0 w-20 h-20 bg-secondary/5 rounded-full -ml-8 -mb-8" />
-            
-            <div className="space-y-1 text-center relative z-10 w-full">
-              <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                Kode Room Versus Mode
-              </p>
-              <div className="flex items-center justify-center gap-2">
-                <span className="font-mono text-2xl font-black text-foreground tracking-wider select-all">
-                  {state.roomCode || "Tanpa Kode"}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    navigator.clipboard.writeText(state.roomCode || "");
-                    toast.success("Kode Room disalin!");
-                  }}
-                >
-                  <Copy className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-col items-center gap-2 w-full p-4 rounded-xl bg-background/60 border border-border/40 relative z-10">
-              <div className="flex items-center gap-2">
-                <span className="relative flex h-2.5 w-2.5">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
-                </span>
-                <span className="text-xs font-black text-emerald-600 dark:text-emerald-500">
-                  Sinkronisasi Otomatis Aktif
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground text-center leading-relaxed">
-                Layar Anda akan otomatis terbuka ketika <span className="font-bold text-foreground">{activeChefName}</span> menyelesaikan gilirannya.
-              </p>
-            </div>
-            
-            {/* Backup Manual Section */}
-            <div className="w-full border-t border-border/40 pt-4 mt-2 relative z-10">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full text-xs font-bold text-muted-foreground hover:text-foreground flex items-center justify-center gap-1.5"
-                onClick={() => setShowBackup(!showBackup)}
-              >
-                {showBackup ? "Sembunyikan Backup Manual" : "Tampilkan Backup Manual (QR Code/Link)"}
-              </Button>
-              
-              {showBackup && (
-                <div className="mt-4 flex flex-col items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-200 w-full">
-                  <div className="p-3 bg-white rounded-xl border border-border shadow-inner">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(syncLink)}`}
-                      alt="QR Code Sinkronisasi"
-                      className="w-[150px] h-[150px]"
-                    />
-                  </div>
-                  <p className="text-[10px] text-muted-foreground text-center max-w-[280px]">
-                    Gunakan QR Code atau salin link di bawah ini jika sinkronisasi otomatis terhambat koneksi.
-                  </p>
-                  <Button onClick={handleCopyLink} className="w-full gap-2 font-bold text-xs" size="sm" variant="outline">
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                    {copied ? "Link Disalin" : "Salin Link Sinkronisasi"}
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
 
           {/* Standings/Stats Preview */}
           <Card className="w-full p-4 border-border/60 shadow-sm space-y-3">
@@ -805,19 +754,57 @@ function Gameplay({
             </div>
           </Card>
 
-          {/* Reset Role Trigger */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              localStorage.removeItem("mchef_player_role");
-              setLocalRole(null);
-            }}
-            className="text-[10px] text-muted-foreground font-bold uppercase hover:bg-transparent hover:text-foreground"
-          >
-            Salah Peran? Ganti Peran Perangkat Anda
-          </Button>
-        </main>
+          <div className="flex flex-col gap-2">
+            {/* Backup Manual Section inside a subtle button */}
+            <div className="flex justify-between gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex-1 text-[10px] text-muted-foreground font-bold hover:bg-muted/30 py-1 h-7"
+                onClick={() => setShowBackup(!showBackup)}
+              >
+                {showBackup ? "Sembunyikan Backup" : "Backup Manual (QR/Link)"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  localStorage.removeItem("mchef_player_role");
+                  setLocalRole(null);
+                  toast.info("Pilih kembali peran perangkat Anda.");
+                }}
+                className="flex-1 text-[10px] text-muted-foreground font-bold hover:bg-muted/30 py-1 h-7"
+              >
+                Ganti Peran
+              </Button>
+            </div>
+            
+            {showBackup && (
+              <Card className="p-4 border-border/40 shadow-sm flex flex-col items-center gap-3 animate-in fade-in duration-200 w-full">
+                <div className="p-2 bg-white rounded-lg border border-border">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(syncLink)}`}
+                    alt="QR Code Sinkronisasi"
+                    className="w-[100px] h-[100px]"
+                  />
+                </div>
+                <Button onClick={handleCopyLink} className="w-full gap-2 font-bold text-xs" size="sm" variant="outline">
+                  {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                  {copied ? "Link Disalin" : "Salin Link Sinkronisasi"}
+                </Button>
+              </Card>
+            )}
+
+            <Button
+              variant="destructive"
+              size="sm"
+              className="w-full font-bold text-xs mt-1"
+              onClick={onExit}
+            >
+              Keluar Permainan
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -975,6 +962,14 @@ function Gameplay({
               <span className="font-bold text-foreground">{state.deck.length}</span>
               <span>kartu tersisa</span>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onExit}
+              className="text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-7 px-2 rounded-md"
+            >
+              Keluar
+            </Button>
           </div>
         </div>
       </header>
