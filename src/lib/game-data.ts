@@ -7,7 +7,7 @@ export interface Menu {
   ingredients: string[];
   rareIngredients: string[];
   jasa: number;
-  tip: string;
+  tip?: string;
 }
 
 export interface MarketCard {
@@ -141,42 +141,38 @@ export function tierOf(ingredient: string): "Premium" | "Medium" | "Ekonomis" {
 export const MARKET_DECK: string[] = MARKET_CARDS.map((c) => c.name);
 
 export const MENUS: Menu[] = [
-  // ================= HIDANGAN UTAMA (15 ITEMS) =================
+  // ================= HIDANGAN UTAMA (10 ITEMS) =================
   {
     "id": 1,
     "type": "Utama",
-    "name": "Sop Daging Sapi Sehat",
-    "ingredients": ["Daging Sapi", "Wortel", "Kentang", "Bawang Putih"],
-    "rareIngredients": ["Bawang Putih"],
-    "jasa": 90000,
-    "tip": "Rebus daging dengan api kecil agar kaldunya bening dan gurih!"
+    "name": "Rawon Daging Spesial",
+    "ingredients": ["Daging Sapi", "Kentang", "Keluak"],
+    "rareIngredients": ["Kentang"],
+    "jasa": 95000
   },
   {
     "id": 2,
     "type": "Utama",
-    "name": "Lobster Saus Padang",
-    "ingredients": ["Lobster", "Paprika", "Cabai", "Bawang Merah"],
-    "rareIngredients": ["Cabai", "Bawang Merah"],
-    "jasa": 85000,
-    "tip": "Tumis bumbu halus sampai harum sebelum lobster dimasukkan."
+    "name": "Sate Kambing Rempah",
+    "ingredients": ["Daging Kambing", "Bawang Bombay", "Cabai"],
+    "rareIngredients": ["Cabai"],
+    "jasa": 90000
   },
   {
     "id": 3,
     "type": "Utama",
-    "name": "Sate Kambing Rempah",
-    "ingredients": ["Daging Kambing", "Tomat", "Bawang Merah"],
-    "rareIngredients": ["Bawang Merah"],
-    "jasa": 80000,
-    "tip": "Bungkus daging dengan daun pepaya agar lebih empuk alami."
+    "name": "Lobster Saus Padang",
+    "ingredients": ["Lobster", "Paprika", "Lada"],
+    "rareIngredients": ["Lada"],
+    "jasa": 120000
   },
   {
     "id": 4,
     "type": "Utama",
-    "name": "Salmon Panggang Lada",
-    "ingredients": ["Ikan Salmon", "Mentimun", "Lada"],
-    "rareIngredients": ["Lada"],
-    "jasa": 80000,
-    "tip": "Panggang bagian kulit terlebih dahulu untuk sensasi krispi."
+    "name": "Salmon Panggang",
+    "ingredients": ["Ikan Salmon", "Mentimun", "Garam"],
+    "rareIngredients": ["Garam"],
+    "jasa": 110000
   },
   {
     "id": 5,
@@ -184,237 +180,211 @@ export const MENUS: Menu[] = [
     "name": "Opor Ayam Kampung",
     "ingredients": ["Daging Ayam", "Kunyit", "Kemiri"],
     "rareIngredients": [],
-    "jasa": 45000,
-    "tip": "Gunakan santan segar dan masak perlahan agar bumbu meresap."
+    "jasa": 45000
   },
   {
     "id": 6,
     "type": "Utama",
-    "name": "Cumi Tumis Cabai Hijau",
-    "ingredients": ["Cumi-Cumi", "Tomat", "Cabai"],
-    "rareIngredients": ["Cabai"],
-    "jasa": 45000,
-    "tip": "Jangan masak cumi terlalu lama agar teksturnya tidak alot."
+    "name": "Cumi Tumis Pedas",
+    "ingredients": ["Cumi-Cumi", "Petai", "Bawang Merah"],
+    "rareIngredients": ["Bawang Merah"],
+    "jasa": 55000
   },
   {
     "id": 7,
     "type": "Utama",
-    "name": "Udang Balado Petai",
-    "ingredients": ["Udang", "Petai", "Bawang Bombay"],
-    "rareIngredients": [],
-    "jasa": 45000,
-    "tip": "Belah punggung udang agar bumbu balado meresap sempurna."
+    "name": "Udang Sambal Balado",
+    "ingredients": ["Udang", "Terong", "Bawang Putih"],
+    "rareIngredients": ["Bawang Putih"],
+    "jasa": 50000
   },
   {
     "id": 8,
     "type": "Utama",
     "name": "Gurami Bakar Madu",
-    "ingredients": ["Ikan Gurami", "Labu Siam", "Gula"],
-    "rareIngredients": ["Gula"],
-    "jasa": 40000,
-    "tip": "Oleskan madu di menit-menit terakhir agar tidak gosong."
+    "ingredients": ["Ikan Gurami", "Labu Siam", "Serai"],
+    "rareIngredients": ["Serai"],
+    "jasa": 65000
   },
   {
     "id": 9,
     "type": "Utama",
-    "name": "Rawon Sapi Kecambah",
-    "ingredients": ["Daging Sapi", "Kecambah", "Keluak"],
-    "rareIngredients": [],
-    "jasa": 85000,
-    "tip": "Kluwek harus diseduh air panas dan dihaluskan dengan baik."
+    "name": "Gulai Kepala Kakap",
+    "ingredients": ["Ikan Kakap", "Lengkuas", "Bawang Putih"],
+    "rareIngredients": ["Bawang Putih"],
+    "jasa": 75000
   },
   {
     "id": 10,
     "type": "Utama",
-    "name": "Lodeh Tahu Tempe",
-    "ingredients": ["Tahu", "Tempe", "Terong", "Garam"],
-    "rareIngredients": ["Garam"],
-    "jasa": 30000,
-    "tip": "Masak sayur labu siam terlebih dahulu sebelum tahu tempe."
+    "name": "Tuna Bakar Rica",
+    "ingredients": ["Ikan Tuna", "Ketumbar", "Lada"],
+    "rareIngredients": ["Lada"],
+    "jasa": 75000
   },
+
+  // ================= HIDANGAN PEMBUKA (10 ITEMS) =================
   {
     "id": 11,
-    "type": "Utama",
-    "name": "Kepiting Masak Cengkeh",
-    "ingredients": ["Kepiting", "Cengkeh", "Bawang Putih"],
-    "rareIngredients": ["Bawang Putih"],
-    "jasa": 75000,
-    "tip": "Gunakan kepiting segar yang capitnya masih kuat untuk rasa manis alami."
+    "type": "Pembuka",
+    "name": "Cah Kembung Gurih",
+    "ingredients": ["Ikan Kembung", "Sawi", "Bawang Merah"],
+    "rareIngredients": ["Bawang Merah"],
+    "jasa": 30000
   },
   {
     "id": 12,
-    "type": "Utama",
-    "name": "Steak Kambing Lada Hitam",
-    "ingredients": ["Daging Kambing", "Kentang", "Lada"],
-    "rareIngredients": ["Lada"],
-    "jasa": 80000,
-    "tip": "Diamkan daging sejenak setelah dipanggang agar jus daging meresap."
+    "type": "Pembuka",
+    "name": "Belut Bakar",
+    "ingredients": ["Belut", "Wortel", "Garam"],
+    "rareIngredients": ["Garam"],
+    "jasa": 35000
   },
   {
     "id": 13,
-    "type": "Utama",
-    "name": "Sate Belut Kencur",
-    "ingredients": ["Belut", "Kencur", "Garam"],
-    "rareIngredients": ["Garam"],
-    "jasa": 40000,
-    "tip": "Bersihkan belut dengan jeruk nipis untuk menghilangkan aroma amis."
+    "type": "Pembuka",
+    "name": "Tumis Tahu Pedas",
+    "ingredients": ["Tahu", "Kecambah", "Cabai"],
+    "rareIngredients": ["Cabai"],
+    "jasa": 25000
   },
   {
     "id": 14,
-    "type": "Utama",
-    "name": "Kakap Asam Pedas",
-    "ingredients": ["Ikan Kakap", "Asam Jawa", "Serai"],
-    "rareIngredients": [],
-    "jasa": 50000,
-    "tip": "Gunakan air asam jawa murni untuk keasaman yang segar dan seimbang."
+    "type": "Pembuka",
+    "name": "Kepiting Rebus",
+    "ingredients": ["Kepiting", "Kol", "Kentang"],
+    "rareIngredients": ["Kentang"],
+    "jasa": 40000
   },
   {
     "id": 15,
-    "type": "Utama",
-    "name": "Kari Tuna Kayu Manis",
-    "ingredients": ["Ikan Tuna", "Kayu Manis", "Jahe"],
-    "rareIngredients": [],
-    "jasa": 45000,
-    "tip": "Tambahkan kayu manis secukupnya agar kuah kari beraroma harum."
+    "type": "Pembuka",
+    "name": "Tumis Kangkung",
+    "ingredients": ["Tempe", "Kangkung", "Kencur"],
+    "rareIngredients": ["Tempe"],
+    "jasa": 20000
   },
-
-  // ================= HIDANGAN PEMBUKA (7 ITEMS) =================
   {
     "id": 16,
     "type": "Pembuka",
-    "name": "Bakwan Jagung Kriuk",
-    "ingredients": ["Jagung", "Kol", "Telur"],
-    "rareIngredients": [],
-    "jasa": 35000,
-    "tip": "Campurkan sedikit tepung beras agar bakwan tetap garing."
+    "name": "Orek Tempe",
+    "ingredients": ["Tempe", "Kacang Panjang", "Daun Bawang"],
+    "rareIngredients": ["Tempe"],
+    "jasa": 20000
   },
   {
     "id": 17,
     "type": "Pembuka",
-    "name": "Gado-Gado Siram",
-    "ingredients": ["Tahu", "Selada", "Kacang Panjang"],
+    "name": "Sup Kerang",
+    "ingredients": ["Kerang", "Brokoli", "Tomat"],
     "rareIngredients": [],
-    "jasa": 35000,
-    "tip": "Ulek kacang tanah goreng selagi hangat untuk saus yang lembut."
+    "jasa": 30000
   },
   {
     "id": 18,
     "type": "Pembuka",
-    "name": "Cah Brokoli Wortel",
-    "ingredients": ["Brokoli", "Wortel", "Bawang Bombay"],
+    "name": "Ikan Mujair Goreng",
+    "ingredients": ["Ikan Mujair", "Pare", "Selada"],
     "rareIngredients": [],
-    "jasa": 25000,
-    "tip": "Rendam brokoli di air garam sebentar sebelum dimasak."
+    "jasa": 25000
   },
   {
     "id": 19,
     "type": "Pembuka",
-    "name": "Tumis Pare Gurih",
-    "ingredients": ["Pare", "Tempe", "Daun Bawang"],
+    "name": "Pecel Lele",
+    "ingredients": ["Ikan Lele", "Lobak", "Buncis"],
     "rareIngredients": [],
-    "jasa": 25000,
-    "tip": "Remas pare dengan garam kasar dan cuci bersih untuk kurangi pahit."
+    "jasa": 25000
   },
   {
     "id": 20,
     "type": "Pembuka",
-    "name": "Salad Selada Mentimun",
-    "ingredients": ["Selada", "Mentimun", "Tomat"],
+    "name": "Bandeng Presto",
+    "ingredients": ["Ikan Bandeng", "Bayam", "Seledri"],
     "rareIngredients": [],
-    "jasa": 30000,
-    "tip": "Sajikan dingin dengan siraman saus segar sesaat sebelum dimakan."
+    "jasa": 30000
   },
+
+  // ================= HIDANGAN PENUTUP (10 ITEMS) =================
   {
     "id": 21,
-    "type": "Pembuka",
-    "name": "Kerang Rebus Serai",
-    "ingredients": ["Kerang", "Serai", "Lengkuas"],
-    "rareIngredients": [],
-    "jasa": 30000,
-    "tip": "Sikat cangkang kerang hingga bersih sebelum direbus dengan serai harum."
+    "type": "Penutup",
+    "name": "Es Sop Buah",
+    "ingredients": ["Semangka", "Melon", "Gula"],
+    "rareIngredients": ["Gula"],
+    "jasa": 20000
   },
   {
     "id": 22,
-    "type": "Pembuka",
-    "name": "Bandeng Presto Ketumbar",
-    "ingredients": ["Ikan Bandeng", "Ketumbar", "Kunyit"],
+    "type": "Penutup",
+    "name": "Alpukat Kocok",
+    "ingredients": ["Alpukat", "Kurma", "Buah Naga"],
     "rareIngredients": [],
-    "jasa": 35000,
-    "tip": "Gunakan daun pisang sebagai alas presto agar kulit ikan tidak hancur."
+    "jasa": 35000
   },
-
-  // ================= HIDANGAN PENUTUP (8 ITEMS) =================
   {
     "id": 23,
     "type": "Penutup",
-    "name": "Sop Buah Tropis",
-    "ingredients": ["Semangka", "Melon", "Buah Naga", "Gula"],
-    "rareIngredients": ["Gula"],
-    "jasa": 35000,
-    "tip": "Gunakan sirup coco pandan dan susu kental manis secukupnya."
+    "name": "Rujak Manis",
+    "ingredients": ["Mangga", "Nanas", "Belimbing"],
+    "rareIngredients": [],
+    "jasa": 20000
   },
   {
     "id": 24,
     "type": "Penutup",
-    "name": "Alpukat Kocok Kurma",
-    "ingredients": ["Alpukat", "Kurma", "Gula"],
+    "name": "Kolak Pisang",
+    "ingredients": ["Pisang", "Nangka", "Gula"],
     "rareIngredients": ["Gula"],
-    "jasa": 25000,
-    "tip": "Pilih alpukat mentega yang sudah matang sempurna agar tidak pahit."
+    "jasa": 20000
   },
   {
     "id": 25,
     "type": "Penutup",
-    "name": "Rujak Manis Pasar",
-    "ingredients": ["Mangga", "Nanas", "Belimbing"],
-    "rareIngredients": [],
-    "jasa": 35000,
-    "tip": "Ulek cabai rawit dan terasi bakar untuk bumbu rujak nendang."
+    "name": "Pancake Durian",
+    "ingredients": ["Durian", "Kelengkeng", "Telur"],
+    "rareIngredients": ["Telur"],
+    "jasa": 30000
   },
   {
     "id": 26,
     "type": "Penutup",
-    "name": "Kolak Pisang Nangka",
-    "ingredients": ["Pisang", "Nangka", "Kayu Manis"],
+    "name": "Jus Kombinasi",
+    "ingredients": ["Apel", "Jeruk", "Anggur"],
     "rareIngredients": [],
-    "jasa": 25000,
-    "tip": "Masukkan nangka di akhir masakan agar aromanya tetap segar."
+    "jasa": 20000
   },
   {
     "id": 27,
     "type": "Penutup",
-    "name": "Es Durian Kelengkeng",
-    "ingredients": ["Durian", "Kelengkeng", "Jambu"],
+    "name": "Es Rambutan",
+    "ingredients": ["Rambutan", "Delima", "Stroberi"],
     "rareIngredients": [],
-    "jasa": 30000,
-    "tip": "Gunakan durian medan asli untuk rasa manis legit yang khas."
+    "jasa": 25000
   },
   {
     "id": 28,
     "type": "Penutup",
-    "name": "Juice Apel Jeruk",
-    "ingredients": ["Apel", "Jeruk", "Gula"],
-    "rareIngredients": ["Gula"],
-    "jasa": 25000,
-    "tip": "Saring jus setelah diblender untuk mendapatkan tekstur yang halus."
+    "name": "Puding Jambu",
+    "ingredients": ["Jambu", "Pepaya", "Telur"],
+    "rareIngredients": ["Telur"],
+    "jasa": 20000
   },
   {
     "id": 29,
     "type": "Penutup",
-    "name": "Es Rambutan Delima",
-    "ingredients": ["Rambutan", "Delima", "Stroberi"],
-    "rareIngredients": [],
-    "jasa": 35000,
-    "tip": "Sajikan dingin dengan pecahan es batu agar lebih segar dinikmati."
+    "name": "Wedang Jahe",
+    "ingredients": ["Serai", "Jahe", "Kayu Manis"],
+    "rareIngredients": ["Serai"],
+    "jasa": 15000
   },
   {
     "id": 30,
     "type": "Penutup",
-    "name": "Tumis Mujair Kembung Sawi",
-    "ingredients": ["Ikan Mujair", "Ikan Kembung", "Sawi", "Lobak"],
+    "name": "Jasuke Tradisional",
+    "ingredients": ["Jagung", "Asam Jawa", "Cengkeh"],
     "rareIngredients": [],
-    "jasa": 40000,
-    "tip": "Goreng ikan setengah matang terlebih dahulu agar tidak mudah hancur."
+    "jasa": 15000
   }
 ];
 

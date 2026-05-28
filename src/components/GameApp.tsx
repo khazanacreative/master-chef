@@ -1415,7 +1415,7 @@ function QuestBoard({ player }: { player?: Player }) {
 
               {/* Card Footer Cooking Tip */}
               <div className={`w-full py-0.5 px-2 rounded-full ${footerBg} text-[7px] md:text-[8px] font-bold text-center leading-tight flex items-center justify-center mt-auto min-h-[18px] md:min-h-[22px]`}>
-                "{m.tip}"
+                "{m.tip || "Kreasikan hidangan lezat Anda dengan bahan berkualitas!"}"
               </div>
 
             </div>
