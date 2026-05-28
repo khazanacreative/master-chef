@@ -522,8 +522,8 @@ function Gameplay({
         if (data.sender === clientId) return; // ignore our own messages
         
         if (data.type === "REQ_STATE") {
-          if (localRole === 0) {
-            console.log("Host received REQ_STATE, broadcasting current state...");
+          if (localRole !== null && stateRef.current && stateRef.current.players.length > 0) {
+            console.log("Active player received REQ_STATE, broadcasting current state...");
             publishState(room, stateRef.current);
           }
         } else if (data.type === "SYNC_STATE") {
