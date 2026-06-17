@@ -1,6 +1,6 @@
 import { useMemo, useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { ChefHat, Sparkles, ShoppingBasket, Coins, Trophy, HandHeart, RotateCcw, Users, ArrowRight, CheckCircle2, Circle, Utensils, Soup, IceCream, Layers, Copy, Check } from "lucide-react";
+import { ChefHat, Sparkles, ShoppingBasket, Coins, Trophy, HandHeart, RotateCcw, Users, ArrowRight, CheckCircle2, Circle, Utensils, Soup, IceCream, Layers, Copy, Check, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -150,6 +150,7 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
   const [mode, setMode] = useState<"local" | "multiplayer">("local");
   const [localRole, setLocalRole] = useState<"0" | "1" | "2" | "3">("0");
   const [joinCode, setJoinCode] = useState("");
+  const [showGoalModal, setShowGoalModal] = useState(false);
   const [roomCode, setRoomCode] = useState(() => {
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     let code = "";
@@ -243,10 +244,23 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
           <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
             Master Chef Quest
           </h1>
-          <p className="text-primary font-semibold mt-1">Pasar Berkah</p>
-          <p className="text-sm text-muted-foreground mt-3 leading-relaxed">
+          <p className="text-primary font-semibold mt-1.5 text-xs sm:text-sm px-2 leading-snug">
+            Permainan Menjadi Master Chef, Simulasi Belanja di Pasar dan Mengatur Keuangan
+          </p>
+          <p className="text-xs sm:text-sm text-muted-foreground mt-3 leading-relaxed">
             Belanja bahan, masak menu lezat, dan selesaikan tantangan untuk menjadi chef terhebat.
           </p>
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowGoalModal(true)}
+              className="text-xs font-bold gap-1.5 h-8 px-3 rounded-full border-primary/20 hover:border-primary/40 text-primary hover:bg-primary/5"
+            >
+              <Info className="w-3.5 h-3.5" />
+              Tujuan & Aturan Game
+            </Button>
+          </div>
         </div>
 
         <Card className="p-6 space-y-5 border-border/60 shadow-sm">
@@ -447,6 +461,95 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
           Dapatkan dan kumpulkan seluruh bahan yang dibutuhkan langsung dari kartu Pasar!
         </p>
       </div>
+
+      {/* Goal Modal inside Lobby */}
+      {showGoalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl border-border/80 overflow-hidden bg-card animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-border/60 flex items-center justify-between bg-muted/20 shrink-0">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary animate-bounce" />
+                <h2 className="text-lg font-black text-foreground">Tujuan & Aturan Permainan</h2>
+              </div>
+              <button 
+                onClick={() => setShowGoalModal(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <span className="sr-only">Tutup</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body with scrollbar */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-thin text-sm leading-relaxed text-muted-foreground">
+              {/* Section 1: Tujuan Utama */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                  Tujuan Utama Game
+                </h3>
+                <p>
+                  Menjadi Chef terbaik dengan menyelesaikan <strong>6 menu quest</strong> (masing-masing 2 Pembuka, 2 Utama, dan 2 Penutup) atau mengumpulkan total kekayaan (Sisa Uang + Pendapatan Jasa) paling banyak sebelum permainan berakhir.
+                </p>
+              </div>
+
+              {/* Section 2: Cara Bermain */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <ShoppingBasket className="w-4 h-4 text-emerald-500" />
+                  Alur & Cara Bermain
+                </h3>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>
+                    <strong>Fase Belanja:</strong> Di setiap giliran, klik <strong>"Buka Kartu"</strong> untuk membuka bahan masakan di Pasar.
+                  </li>
+                  <li>
+                    <strong>Membeli Bahan:</strong> Jika bahan tersebut dibutuhkan oleh menu quest Anda dan uang mencukupi, Anda dapat membelinya. Bahan akan otomatis ditempel pada menu yang membutuhkannya.
+                  </li>
+                  <li>
+                    <strong>Melewati Giliran:</strong> Jika bahan tidak dibutuhkan atau uang Anda tidak cukup, klik <strong>"Lewati Giliran (Skip)"</strong> untuk memberikan kesempatan kepada pemain berikutnya.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Section 3: Menyelesaikan Menu */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <ChefHat className="w-4 h-4 text-primary" />
+                  Menyelesaikan Menu (Quest)
+                </h3>
+                <p>
+                  Saat semua bahan pada suatu menu terkumpul, menu tersebut otomatis selesai. Anda akan menerima pembayaran <strong>"Jasa Masak"</strong> yang langsung ditambahkan ke saldo koin/uang Anda. Uang ini dapat digunakan untuk membeli bahan makanan berikutnya.
+                </p>
+              </div>
+
+              {/* Section 4: Kondisi Game Over */}
+              <div className="space-y-2 pb-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <Coins className="w-4 h-4 text-amber-500" />
+                  Akhir Permainan
+                </h3>
+                <p>Permainan berakhir secara otomatis apabila:</p>
+                <ol className="list-decimal pl-5 space-y-1">
+                  <li>Deck kartu Pasar telah habis.</li>
+                  <li>Salah satu Chef berhasil menyelesaikan seluruh 6 menu quest miliknya.</li>
+                  <li>Semua Chef kehabisan uang (saldo per Chef di bawah Rp 5.000) sehingga tidak bisa membeli bahan lagi.</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-border/60 bg-muted/10 flex justify-end shrink-0">
+              <Button onClick={() => setShowGoalModal(false)} size="sm" className="font-semibold px-4">
+                Mengerti, Siap Masak!
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
@@ -478,6 +581,7 @@ function Gameplay({
 
   const [copied, setCopied] = useState(false);
   const [showBackup, setShowBackup] = useState(false);
+  const [showGoalModal, setShowGoalModal] = useState(false);
 
   const player = state.players[state.turn];
   const displayPlayer = (state.isMultiplayer && localRole !== null && state.players[localRole])
@@ -846,6 +950,15 @@ function Gameplay({
             <Button
               variant="ghost"
               size="sm"
+              onClick={() => setShowGoalModal(true)}
+              className="text-xs font-bold text-muted-foreground hover:text-primary hover:bg-primary/5 h-7 px-2 rounded-md flex items-center gap-1"
+            >
+              <Info className="w-3.5 h-3.5" />
+              Tujuan Game
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={onExit}
               className="text-xs font-bold text-muted-foreground hover:text-destructive hover:bg-destructive/5 h-7 px-2 rounded-md"
             >
@@ -1055,6 +1168,95 @@ function Gameplay({
 
         </div>
       </main>
+
+      {/* Goal Modal inside Gameplay */}
+      {showGoalModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm animate-in fade-in duration-200">
+          <Card className="w-full max-w-lg max-h-[85vh] flex flex-col shadow-2xl border-border/80 overflow-hidden bg-card animate-in zoom-in-95 duration-200">
+            {/* Modal Header */}
+            <div className="p-5 border-b border-border/60 flex items-center justify-between bg-muted/20 shrink-0">
+              <div className="flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-primary animate-bounce" />
+                <h2 className="text-lg font-black text-foreground">Tujuan & Aturan Permainan</h2>
+              </div>
+              <button 
+                onClick={() => setShowGoalModal(false)}
+                className="rounded-lg p-1 text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors"
+              >
+                <span className="sr-only">Tutup</span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Modal Body with scrollbar */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-5 scrollbar-thin text-sm leading-relaxed text-muted-foreground">
+              {/* Section 1: Tujuan Utama */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <Sparkles className="w-4 h-4 text-yellow-500" />
+                  Tujuan Utama Game
+                </h3>
+                <p>
+                  Menjadi Chef terbaik dengan menyelesaikan <strong>6 menu quest</strong> (masing-masing 2 Pembuka, 2 Utama, dan 2 Penutup) atau mengumpulkan total kekayaan (Sisa Uang + Pendapatan Jasa) paling banyak sebelum permainan berakhir.
+                </p>
+              </div>
+
+              {/* Section 2: Cara Bermain */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <ShoppingBasket className="w-4 h-4 text-emerald-500" />
+                  Alur & Cara Bermain
+                </h3>
+                <ul className="list-disc pl-5 space-y-1.5">
+                  <li>
+                    <strong>Fase Belanja:</strong> Di setiap giliran, klik <strong>"Buka Kartu"</strong> untuk membuka bahan masakan di Pasar.
+                  </li>
+                  <li>
+                    <strong>Membeli Bahan:</strong> Jika bahan tersebut dibutuhkan oleh menu quest Anda dan uang mencukupi, Anda dapat membelinya. Bahan akan otomatis ditempel pada menu yang membutuhkannya.
+                  </li>
+                  <li>
+                    <strong>Melewati Giliran:</strong> Jika bahan tidak dibutuhkan atau uang Anda tidak cukup, klik <strong>"Lewati Giliran (Skip)"</strong> untuk memberikan kesempatan kepada pemain berikutnya.
+                  </li>
+                </ul>
+              </div>
+
+              {/* Section 3: Menyelesaikan Menu */}
+              <div className="space-y-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <ChefHat className="w-4 h-4 text-primary" />
+                  Menyelesaikan Menu (Quest)
+                </h3>
+                <p>
+                  Saat semua bahan pada suatu menu terkumpul, menu tersebut otomatis selesai. Anda akan menerima pembayaran <strong>"Jasa Masak"</strong> yang langsung ditambahkan ke saldo koin/uang Anda. Uang ini dapat digunakan untuk membeli bahan makanan berikutnya.
+                </p>
+              </div>
+
+              {/* Section 4: Kondisi Game Over */}
+              <div className="space-y-2 pb-2">
+                <h3 className="font-bold text-foreground flex items-center gap-1.5 text-sm">
+                  <Coins className="w-4 h-4 text-amber-500" />
+                  Akhir Permainan
+                </h3>
+                <p>Permainan berakhir secara otomatis apabila:</p>
+                <ol className="list-decimal pl-5 space-y-1">
+                  <li>Deck kartu Pasar telah habis.</li>
+                  <li>Salah satu Chef berhasil menyelesaikan seluruh 6 menu quest miliknya.</li>
+                  <li>Semua Chef kehabisan uang (saldo per Chef di bawah Rp 5.000) sehingga tidak bisa membeli bahan lagi.</li>
+                </ol>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-border/60 bg-muted/10 flex justify-end shrink-0">
+              <Button onClick={() => setShowGoalModal(false)} size="sm" className="font-semibold px-4">
+                Mengerti, Siap Masak!
+              </Button>
+            </div>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
