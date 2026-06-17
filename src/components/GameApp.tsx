@@ -537,6 +537,7 @@ function Lobby({ onStart }: { onStart: (s: GameState) => void }) {
                   <li>Deck kartu Pasar telah habis.</li>
                   <li>Salah satu Chef berhasil menyelesaikan seluruh 6 menu quest miliknya.</li>
                   <li>Semua Chef kehabisan uang (saldo per Chef di bawah Rp 5.000) sehingga tidak bisa membeli bahan lagi.</li>
+                  <li>Pemenang permainan adalah yang paling banyak menunya diselesaikan dan saldo uangnya paling banyak.</li>
                 </ol>
               </div>
             </div>
@@ -1244,6 +1245,7 @@ function Gameplay({
                   <li>Deck kartu Pasar telah habis.</li>
                   <li>Salah satu Chef berhasil menyelesaikan seluruh 6 menu quest miliknya.</li>
                   <li>Semua Chef kehabisan uang (saldo per Chef di bawah Rp 5.000) sehingga tidak bisa membeli bahan lagi.</li>
+                  <li>Pemenang permainan adalah yang paling banyak menunya diselesaikan dan saldo uangnya paling banyak.</li>
                 </ol>
               </div>
             </div>
