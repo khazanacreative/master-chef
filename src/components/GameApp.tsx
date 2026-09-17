@@ -1448,14 +1448,16 @@ function MarketDesk({
                 )}
               </Button>
             ))}
-            <Button 
-              onClick={onSkip} 
-              variant="outline" 
-              size="sm" 
-              className="flex flex-col items-center justify-center h-11 text-[11px] font-bold px-1"
+            <Button
+              onClick={onSkip}
+              variant="outline"
+              size="sm"
+              className="flex flex-col items-center justify-center h-11 text-[11px] font-bold px-1 leading-tight"
             >
-              <ArrowRight className="w-3.5 h-3.5 mb-0.5 shrink-0" />
-              Skip
+              <span className="flex items-center gap-1">
+                <ArrowRight className="w-3.5 h-3.5 shrink-0" />
+                Skip
+              </span>
             </Button>
           </div>
         </div>
